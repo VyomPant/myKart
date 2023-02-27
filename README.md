@@ -1,9 +1,9 @@
 # myKart
 myKart is the backend of an online shopping application made using spring boot , spring cloud and microservice architecture pattern. It comprises of four microservices:
-**1) Product Service**: Microservice to create and view products.
-**2) Order Service**: Microservice to order products.
-**3) Inventory Service**: Microservice to check which products are currently in stock(available in the inventory).
-**4) Notification Service**: Microservice to send notifications when order is placed.
+**1) Product Service**: Microservice to create and view products.  
+**2) Order Service**: Microservice to order products.  
+**3) Inventory Service**: Microservice to check which products are currently in stock(available in the inventory).  
+**4) Notification Service**: Microservice to send notifications when order is placed.  
 
 ## Architecture:
 
