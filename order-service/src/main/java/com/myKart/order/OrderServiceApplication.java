@@ -2,9 +2,12 @@ package com.mykart.order;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
-// Phase 2: PostgreSQL, Outbox pattern, Saga orchestration, Resilience4j, Flyway
 @SpringBootApplication
+@EnableDiscoveryClient
+@EnableScheduling
 public class OrderServiceApplication {
 
     public static void main(String[] args) {
