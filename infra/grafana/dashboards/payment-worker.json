@@ -1,0 +1,56 @@
+{
+  "title": "Payment Worker",
+  "uid": "mykart-payment",
+  "tags": ["mykart", "payment"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Payout Queue Depth",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "targets": [
+        {"expr": "payout_queue_depth", "legendFormat": "Queue Depth"}
+      ],
+      "options": {"colorMode": "background"}
+    },
+    {
+      "id": 2,
+      "title": "Payout Success Rate by Channel",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "targets": [
+        {
+          "expr": "rate(payout_success_total[5m])",
+          "legendFormat": "Success {{channel}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Payout Failure Rate by Channel",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "targets": [
+        {
+          "expr": "rate(payout_failed_total[5m])",
+          "legendFormat": "Failed {{channel}} {{failure_type}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Payout Processing Latency (p99)",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 12},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, rate(payout_processing_duration_seconds_bucket[5m]))",
+          "legendFormat": "p99 {{channel}}"
+        }
+      ]
+    }
+  ]
+}

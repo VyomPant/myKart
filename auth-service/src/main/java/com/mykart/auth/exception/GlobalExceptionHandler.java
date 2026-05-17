@@ -1,0 +1,55 @@
+package com.mykart.auth.exception;
+
+import com.mykart.common.dto.ApiError;
+import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.List;
+
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiError handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
+        var fieldErrors = ex.getBindingResult().getFieldErrors().stream()
+                .map(fe -> new ApiError.FieldError(fe.getField(), fe.getDefaultMessage()))
+                .toList();
+        return ApiError.of(400, "Validation Failed", "Request validation failed", request.getRequestURI(), fieldErrors);
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ApiError handleBadCredentials(BadCredentialsException ex, HttpServletRequest request) {
+        return ApiError.of(401, "Unauthorized", ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleConflict(IllegalArgumentException ex, HttpServletRequest request) {
+        return ApiError.of(409, "Conflict", ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(com.mykart.common.exception.ResourceNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiError handleNotFound(com.mykart.common.exception.ResourceNotFoundException ex, HttpServletRequest request) {
+        return ApiError.of(404, "Not Found", ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ApiError handleGeneric(Exception ex, HttpServletRequest request) {
+        log.error("Unhandled exception at {}", request.getRequestURI(), ex);
+        return ApiError.of(500, "Internal Server Error", "An unexpected error occurred", request.getRequestURI());
+    }
+}

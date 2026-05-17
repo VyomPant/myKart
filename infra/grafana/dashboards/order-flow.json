@@ -1,0 +1,57 @@
+{
+  "title": "Order Flow",
+  "uid": "mykart-orders",
+  "tags": ["mykart", "orders"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Orders Placed (total)",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "targets": [{"expr": "orders_placed_total", "legendFormat": "Orders Placed"}]
+    },
+    {
+      "id": 2,
+      "title": "Orders Confirmed (total)",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "targets": [{"expr": "orders_confirmed_total", "legendFormat": "Orders Confirmed"}]
+    },
+    {
+      "id": 3,
+      "title": "Order State Distribution",
+      "type": "piechart",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 4},
+      "targets": [
+        {"expr": "orders_by_status", "legendFormat": "{{status}}"}
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Saga Completion Rate",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 16, "x": 8, "y": 4},
+      "targets": [
+        {
+          "expr": "rate(orders_saga_duration_seconds_count[5m])",
+          "legendFormat": "{{outcome}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Saga Duration p99 (s)",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 12},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, rate(orders_saga_duration_seconds_bucket[5m]))",
+          "legendFormat": "p99 {{outcome}}"
+        }
+      ]
+    }
+  ]
+}

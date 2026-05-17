@@ -1,0 +1,154 @@
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        # Auth service — no JWT filter (public endpoints)
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/auth/**
+
+        # Product service — JWT required (applied via global JwtAuthFilter)
+        - id: product-service
+          uri: lb://product-service
+          predicates:
+            - Path=/api/products/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 50
+                redis-rate-limiter.burstCapacity: 100
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@ipKeyResolver}"
+
+        # Order service
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 20
+                redis-rate-limiter.burstCapacity: 50
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@ipKeyResolver}"
+
+        # Inventory service
+        - id: inventory-service
+          uri: lb://inventory-service
+          predicates:
+            - Path=/api/inventory/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 30
+                redis-rate-limiter.burstCapacity: 60
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@ipKeyResolver}"
+
+        # Payment service
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/payments/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@ipKeyResolver}"
+
+        # Eureka dashboard
+        - id: discovery-server
+          uri: http://${EUREKA_HOST:localhost}:8761
+          predicates:
+            - Path=/eureka/web
+          filters:
+            - SetPath=/
+
+        # OpenAPI aggregation from all services
+        - id: openapi-product
+          uri: lb://product-service
+          predicates:
+            - Path=/v3/api-docs/product-service
+          filters:
+            - RewritePath=/v3/api-docs/product-service, /v3/api-docs
+
+        - id: openapi-order
+          uri: lb://order-service
+          predicates:
+            - Path=/v3/api-docs/order-service
+          filters:
+            - RewritePath=/v3/api-docs/order-service, /v3/api-docs
+
+        - id: openapi-auth
+          uri: lb://auth-service
+          predicates:
+            - Path=/v3/api-docs/auth-service
+          filters:
+            - RewritePath=/v3/api-docs/auth-service, /v3/api-docs
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: 6379
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_HOST:localhost}:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+server:
+  port: 8080
+
+# RS256 public key — validates tokens issued by auth-service (no auth-service call per request)
+# DEMO ONLY: in production, inject via secrets manager
+jwt:
+  public-key: |
+    -----BEGIN PUBLIC KEY-----
+    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0YXAGWJa4h0PF4bINV3h
+    q1IM2ealEeSTWs0ZDIoMM+kSc98Uy4kVLsTU2fHUJa3O36zCjyhITZDXc7ruAoF5
+    9NDLLcBuuzmLv6OIZYvJDxFb3B2eAhYs6piYTIEdfLVQAHeHXhswqZJfB0DzGYXi
+    E60GRcSSBm06vo2p9Xh8VKHiSeG8DX8zc7tC3aiV9EIn2BVSMY9fvMr2LW2rYRZp
+    YJudY/5NhZpGNUWVPNWISPkwtGqf3ulu859ekRxe/6SyhoG101M6TtagfoJP4aG/
+    wTaNHI+xHc3MpLdMFUWRuwVK5VuVRJmxuPrW0AJw0x5M3ZkwUM7huVmD/OOxcTXQ
+    dQIDAQAB
+    -----END PUBLIC KEY-----
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: auth-service
+        url: /v3/api-docs/auth-service
+      - name: product-service
+        url: /v3/api-docs/product-service
+      - name: order-service
+        url: /v3/api-docs/order-service
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://${OTEL_HOST:localhost}:4317
+  metrics:
+    tags:
+      service: api-gateway
+
+logging:
+  config: classpath:logback-spring.xml

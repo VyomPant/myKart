@@ -1,0 +1,58 @@
+{
+  "title": "Kafka Consumer Lag",
+  "uid": "mykart-kafka-lag",
+  "tags": ["mykart", "kafka"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Consumer Lag by Group and Topic",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 0},
+      "targets": [
+        {
+          "expr": "kafka_consumer_fetch_manager_records_lag{service=~\"$service\"}",
+          "legendFormat": "{{service}} {{topic}} partition={{partition}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Messages Consumed Rate (msg/s)",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "targets": [
+        {
+          "expr": "rate(kafka_consumer_fetch_manager_records_consumed_total{service=~\"$service\"}[1m])",
+          "legendFormat": "{{service}} {{topic}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Consumer Group Latest Offset",
+      "type": "stat",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "targets": [
+        {
+          "expr": "kafka_consumer_fetch_manager_records_consumed_total{service=~\"$service\"}",
+          "legendFormat": "{{service}}"
+        }
+      ]
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "type": "query",
+        "query": "label_values(kafka_consumer_fetch_manager_records_lag, service)",
+        "multi": true,
+        "includeAll": true,
+        "current": {"text": "All", "value": "$__all"}
+      }
+    ]
+  }
+}

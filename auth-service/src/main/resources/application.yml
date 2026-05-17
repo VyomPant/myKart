@@ -1,0 +1,89 @@
+spring:
+  application:
+    name: auth-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/auth_db
+    username: ${DB_USER:mykart}
+    password: ${DB_PASSWORD:mykart}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: public
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+server:
+  port: 8082
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_HOST:localhost}:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+# RS256 keypair — DEMO ONLY: in production, inject via secrets manager
+# Private key: auth-service signs tokens
+# Public key: derived from private key at startup (see JwtConfig)
+# Gateway gets the public key as a PEM in its own application.yml
+auth:
+  jwt:
+    private-key: |
+      -----BEGIN PRIVATE KEY-----
+      MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDRhcAZYlriHQ8X
+      hsg1XeGrUgzZ5qUR5JNazRkMigwz6RJz3xTLiRUuxNTZ8dQlrc7frMKPKEhNkNdz
+      uu4CgXn00MstwG67OYu/o4hli8kPEVvcHZ4CFizqmJhMgR18tVAAd4deGzCpkl8H
+      QPMZheITrQZFxJIGbTq+jan1eHxUoeJJ4bwNfzNzu0LdqJX0QifYFVIxj1+8yvYt
+      bathFmlgm51j/k2FmkY1RZU81YhI+TC0ap/e6W7zn16RHF7/pLKGgbXTUzpO1qB+
+      gk/hob/BNo0cj7Edzcykt0wVRZG7BUrlW5VEmbG4+tbQAnDTHkzdmTBQzuG5WYP8
+      47FxNdB1AgMBAAECggEAMHBOxT+VGc3UiaCeJCJYdApT0MOPGYgh3f3pIto+cHjb
+      jIDANr7yL/4O5HURUgWw/EqdL0oFjzMjcEzAzkD/QC9OLb1djDjFW3Bz7eAHg02E
+      0mphd4OHblQJb7Rw6/4h6P25RLMeCLH/eLaWDSpD5j8b4mDLzqMNj/TB3G92tPzN
+      uUViNXSwds8hPvtDBIVAV379dlr0oIBOeY5SItrfsxsZuPcAYT8ouY+QZjfRr+hF
+      HHWzuBvJU2ENcCdP6/0uL6YKPuhP4aeWI8GOifagNwSRZ27BtT2K8rOZgKICMo7T
+      I9XmT7p6Cu3lmhHBkYf+fJUXiWaUUW9hbu5wBcwqaQKBgQD3a53qU0gaYV4Gh09y
+      T5AixveO0b4pv+Le8mbXKMS5OZVJ9jNdXPmYJQRsf/+rCDYuiJSTld9t3l9tj1z6
+      5PniIGpDvB67yxPS7ngIRdd9EiJ/flgbEyMFqzK28HxN817k7oikm3Ijsj5NrL91
+      nMrKYtWqo7H8qSzVbw75eB/xOQKBgQDYybVxZVjLcz74Ii5F+d+e+arDct6DRsp/
+      Tj3AWeiklUJv9zK0grWoPBqejhI7a7ABCh5V9NPtwmE1h86a2OjLj5bbspYt8f0b
+      bGcNY0cTGxD0PE360dYeBkUC1Jzy2pyKSdoJy8qQz8Lbza4Z+s/qs/tTC+2/BnBc
+      uFGgEsxlHQKBgQClBHO4W39ViOcrN4f3V7VsXIO0D5PjSIXJ6KZKjnhWiV9WiwxL
+      Er2tidLfgqdErR9l/dYKcQUpxAylh96dv6Yh+TimoItm+NTp8/6+lcZZNoUnv16I
+      AEV1fG9AsDhXzR/XVHhyQPLpd/Ix4Ct6B+8A+NZFDxSgzTyHxaCZJlM3kQKBgDKL
+      VPKLXpiQ1i2kSoWmLK00KMxJC/gvmSb1ZxBh5gv5gPP5/qh3kUMYQFyXY0jXYsHb
+      ShdgbckRePiyIUmZKS3M3K98g+dSdGDgdWZ5ryiVNu664LOKGRIHBDAUwkMdFUJo
+      1Z1TFneM+TGmUuFbyP4/2GkUbuoK5ke38dAQkfdBAoGBAOkjTdGpoaqeDbhFxG84
+      sq/i596pgLM/wrL0qGw7Zi4tKMKA2p6faFm36YDvcsw2YS2XQMDfTBRN2teDMkG9
+      aU8o+i6TC4/8CVAudM7Wx1ZMWC5fAt6X/V/rSf3wG/ZHiUXmz9+8/lknkovjALrQ
+      diYe5rag2Ouu4oMwLZbwqZrj
+      -----END PRIVATE KEY-----
+    access-token-expiration-ms: 3600000
+    refresh-token-expiration-ms: 604800000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://${OTEL_HOST:localhost}:4317
+  metrics:
+    tags:
+      service: auth-service
+
+logging:
+  config: classpath:logback-spring.xml
