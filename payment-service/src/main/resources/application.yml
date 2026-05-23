@@ -1,0 +1,67 @@
+spring:
+  application:
+    name: payment-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/payment_db
+    username: ${DB_USER:mykart}
+    password: ${DB_PASSWORD:mykart}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: payment-service
+      topic:
+        order-confirmed: order.confirmed
+    producer:
+      topic:
+        payout-completed: payout.completed
+
+server:
+  port: 8086
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_HOST:localhost}:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+payment:
+  platform-fee-rate: 0.02
+  payout:
+    max-retries: 5
+    worker-interval-ms: 60000
+    batch-size: 50
+    backoff-base-seconds: 60
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://${OTEL_HOST:localhost}:4317
+  metrics:
+    tags:
+      service: payment-service
+
+logging:
+  config: classpath:logback-spring.xml
