@@ -28,10 +28,13 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final MongoTemplate mongoTemplate;
+    private final EmbeddingService embeddingService;
 
-    public ProductService(ProductRepository productRepository, MongoTemplate mongoTemplate) {
+    public ProductService(ProductRepository productRepository, MongoTemplate mongoTemplate,
+                          EmbeddingService embeddingService) {
         this.productRepository = productRepository;
         this.mongoTemplate = mongoTemplate;
+        this.embeddingService = embeddingService;
     }
 
     public ProductResponse create(CreateProductRequest request, String sellerId) {
@@ -47,10 +50,11 @@ public class ProductService {
                 Instant.now(),
                 Instant.now()
         );
+        product.setEmbedding(embeddingService.embedProduct(product));
         var saved = productRepository.save(product);
         MDC.put("productId", saved.getId());
         MDC.put("sellerId", sellerId);
-        log.info("Product created: name={} skuCode={}", saved.getName(), saved.getSkuCode());
+        log.info("Product created: name={} skuCode={} embedded={}", saved.getName(), saved.getSkuCode(), saved.getEmbedding() != null);
         MDC.remove("productId");
         MDC.remove("sellerId");
         return ProductResponse.from(saved);
@@ -93,9 +97,10 @@ public class ProductService {
         if (request.price() != null) product.setPrice(request.price());
         if (request.specs() != null) product.setSpecs(request.specs());
         product.setUpdatedAt(Instant.now());
+        product.setEmbedding(embeddingService.embedProduct(product));
 
         var saved = productRepository.save(product);
-        log.info("Product updated: id={} sellerId={}", id, sellerId);
+        log.info("Product updated: id={} sellerId={} embedded={}", id, sellerId, saved.getEmbedding() != null);
         return ProductResponse.from(saved);
     }
 

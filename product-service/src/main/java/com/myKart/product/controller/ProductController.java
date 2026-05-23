@@ -2,27 +2,38 @@ package com.mykart.product.controller;
 
 import com.mykart.common.dto.PagedResponse;
 import com.mykart.product.dto.request.CreateProductRequest;
+import com.mykart.product.dto.request.GenerateDescriptionRequest;
 import com.mykart.product.dto.request.UpdateProductRequest;
 import com.mykart.product.dto.response.ProductResponse;
+import com.mykart.product.service.DescriptionGenerationService;
 import com.mykart.product.service.ProductService;
+import com.mykart.product.service.SemanticSearchService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/products")
-@Tag(name = "Products", description = "Product catalog management")
+@Tag(name = "Products", description = "Product catalog with semantic search and AI descriptions")
 public class ProductController {
 
     private final ProductService productService;
+    private final SemanticSearchService semanticSearchService;
+    private final DescriptionGenerationService descriptionGenerationService;
 
-    public ProductController(ProductService productService) {
+    public ProductController(ProductService productService,
+                             SemanticSearchService semanticSearchService,
+                             DescriptionGenerationService descriptionGenerationService) {
         this.productService = productService;
+        this.semanticSearchService = semanticSearchService;
+        this.descriptionGenerationService = descriptionGenerationService;
     }
 
     @PostMapping
@@ -53,9 +64,27 @@ public class ProductController {
     }
 
     @GetMapping("/search")
-    @Operation(summary = "Search products by keyword")
-    public List<ProductResponse> search(@RequestParam String q) {
-        return productService.search(q);
+    @Operation(summary = "Search products — semantic (vector cosine) when AI enabled, MongoDB text search fallback")
+    public List<ProductResponse> search(
+            @RequestParam String q,
+            @RequestParam(defaultValue = "20") int limit) {
+        return semanticSearchService.search(q, limit).stream()
+                .map(ProductResponse::from)
+                .toList();
+    }
+
+    @PostMapping("/generate-description")
+    @Operation(summary = "Generate product description via AI (returns 501 if AI disabled)")
+    public ResponseEntity<Map<String, String>> generateDescription(
+            @Valid @RequestBody GenerateDescriptionRequest request) {
+        String description = descriptionGenerationService.generateDescription(
+                request.name(), request.category(), request.specs());
+
+        if (description != null) {
+            return ResponseEntity.ok(Map.of("description", description));
+        }
+        return ResponseEntity.status(501)
+                .body(Map.of("message", "AI features disabled — set OPENAI_API_KEY and ai.enabled=true"));
     }
 
     @PutMapping("/{id}")

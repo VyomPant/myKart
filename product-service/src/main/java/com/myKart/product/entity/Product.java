@@ -6,6 +6,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -30,6 +31,9 @@ public class Product {
     private String skuCode;
 
     private Map<String, String> specs;
+
+    // 1536-dim OpenAI embedding; null when AI is disabled or not yet computed
+    private List<Double> embedding;
 
     private Instant createdAt;
 
@@ -60,6 +64,7 @@ public class Product {
     public BigDecimal getPrice() { return price; }
     public String getSkuCode() { return skuCode; }
     public Map<String, String> getSpecs() { return specs; }
+    public List<Double> getEmbedding() { return embedding; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 
@@ -71,6 +76,7 @@ public class Product {
     public void setPrice(BigDecimal price) { this.price = price; }
     public void setSkuCode(String skuCode) { this.skuCode = skuCode; }
     public void setSpecs(Map<String, String> specs) { this.specs = specs; }
+    public void setEmbedding(List<Double> embedding) { this.embedding = embedding; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 }

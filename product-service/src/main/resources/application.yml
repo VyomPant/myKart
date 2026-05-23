@@ -4,6 +4,15 @@ spring:
   data:
     mongodb:
       uri: ${MONGODB_URI:mongodb://localhost:27017/product_db}
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      embedding:
+        options:
+          model: text-embedding-3-small
+      chat:
+        options:
+          model: gpt-4o-mini
 
 server:
   port: 8083
@@ -33,5 +42,10 @@ management:
     tags:
       service: product-service
 
+ai:
+  enabled: ${AI_ENABLED:false}
+
 logging:
   config: classpath:logback-spring.xml
+  level:
+    com.mykart.product.service: DEBUG
