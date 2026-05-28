@@ -177,20 +177,4 @@ services:
     networks:
       - mykart-net
 
-  # ─── Service Discovery ──────────────────────────────────────────────────────
-  discovery-server:
-    build:
-      context: ..
-      dockerfile: discovery-server/Dockerfile
-    container_name: mykart-discovery
-    ports:
-      - "8761:8761"
-    environment:
-      OTEL_HOST: tempo
-    networks:
-      - mykart-net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+  # discovery-server runs locally via: cd discovery-server && mvn spring-boot:run

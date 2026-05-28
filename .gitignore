@@ -11,6 +11,7 @@ target/
 
 # Internal planning document — not for version control
 my kart v2 plan.md
+notes.md
 
 # Local Claude Code settings
 .claude/settings.local.json

@@ -9,7 +9,7 @@ import reactor.core.publisher.Mono;
 import java.util.Objects;
 
 @Configuration
-public class IpKeyResolver {
+public class RateLimitConfig {
 
     @Bean
     public KeyResolver ipKeyResolver() {

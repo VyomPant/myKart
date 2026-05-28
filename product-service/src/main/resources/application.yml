@@ -6,7 +6,9 @@ spring:
       uri: ${MONGODB_URI:mongodb://localhost:27017/product_db}
   ai:
     openai:
-      api-key: ${OPENAI_API_KEY:}
+      # Placeholder prevents Spring AI M6 from failing at startup when no key is set.
+      # EmbeddingService.isEnabled() guards all actual API calls via ai.enabled flag.
+      api-key: ${OPENAI_API_KEY:ai-features-disabled}
       embedding:
         options:
           model: text-embedding-3-small
