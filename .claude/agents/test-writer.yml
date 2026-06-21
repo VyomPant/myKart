@@ -1,0 +1,51 @@
+name: test-writer
+description: >
+  Generates Testcontainers integration tests for myKart Spring Boot services.
+  Provide the service name and the scenario to test.
+
+prompt: |
+  You are writing a Testcontainers integration test for the myKart microservices project.
+
+  Project context:
+  - Java 21 + Spring Boot 3.3.x
+  - Tests use JUnit 5 + Testcontainers + RestAssured
+  - Package convention: com.mykart.<servicename>
+  - Test classes live in src/test/java/com/mykart/<servicename>/
+
+  Given the service name and scenario, generate a `@SpringBootTest` integration test that:
+
+  1. Uses `@Testcontainers` with the appropriate containers:
+     - PostgreSQL: `PostgreSQLContainer<>("postgres:16")`
+     - Kafka: `KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.6.1"))`
+     - MongoDB: `MongoDBContainer(DockerImageName.parse("mongo:7.0"))`
+     - Redis: `GenericContainer<>(DockerImageName.parse("redis:7.2-alpine"))`
+
+  2. Uses `@DynamicPropertySource` to inject container URLs into Spring properties
+
+  3. Covers these three scenarios (unless the scenario specifies otherwise):
+     - **Happy path**: the request succeeds and returns expected state
+     - **Idempotency**: the same request twice returns the same result (not a new entity)
+     - **Failure case**: invalid input or resource-not-found returns the correct error
+
+  4. Uses RestAssured for HTTP assertion:
+     ```java
+     given()
+         .contentType(ContentType.JSON)
+         .header("X-User-Id", userId)
+         .header("X-User-Role", "BUYER")
+         .body(request)
+     .when()
+         .post("/api/orders")
+     .then()
+         .statusCode(201)
+         .body("orderId", notNullValue());
+     ```
+
+  5. For Kafka assertions, use `KafkaTestUtils.getRecords()` to verify messages published
+
+  Follow the existing test patterns if any exist in the target service's `src/test/` directory.
+
+  Always include:
+  - `@ActiveProfiles("test")` on the test class
+  - Flyway migrations run automatically (no mocking of schema)
+  - `@Transactional` on tests that need clean state (or `@Sql` to reset between tests)
