@@ -45,7 +45,7 @@ jobs:
 
   integration-tests:
     name: Integration Tests (Testcontainers)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: unit-tests
 
     steps:
@@ -61,7 +61,12 @@ jobs:
       - name: Build mkart-common
         run: mvn install -pl mkart-common -am --no-transfer-progress -DskipTests
 
+      - name: Verify Docker is available
+        run: docker ps
+
       - name: Run integration tests (order, inventory, payment)
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: "true"
         run: |
           mvn verify \
             -pl order-service,inventory-service,payment-service \
@@ -78,7 +83,7 @@ jobs:
 
   contract-tests:
     name: Spring Cloud Contract Verification
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: unit-tests
 
     steps:

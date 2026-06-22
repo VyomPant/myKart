@@ -282,32 +282,14 @@ Committed to `infra/grafana/dashboards/`, auto-provisioned on startup:
 
 ## AI-Native Development
 
-### `.claude/` Structure
+This project was built using Claude Code with a structured `.claude/` workspace:
 
-```
-.claude/
-├── settings.json              # PreToolUse safety hooks + PostToolUse lint
-├── commands/
-│   ├── bootstrap-service.md   # /bootstrap-service <name>
-│   ├── add-migration.md       # /add-migration <service> <desc>
-│   ├── test-all.md            # /test-all
-│   ├── check-contract.md      # /check-contract
-│   └── run-full-test-suite.md # /run-full-test-suite
-├── skills/
-│   ├── microservice-patterns/SKILL.md  # Outbox, Saga, idempotency
-│   ├── kotlin-conventions/SKILL.md     # Kotlin idioms
-│   └── spring-boot-conventions/SKILL.md
-└── agents/
-    ├── code-reviewer.yml
-    └── test-writer.yml
-```
+- **Skills** (`microservice-patterns`, `kotlin-conventions`, `spring-boot-conventions`) — loaded per task so the model has the right context without full codebase scanning
+- **Commands** (`/bootstrap-service`, `/add-migration`, `/test-all`, `/check-contract`) — repeatable workflows for common tasks
+- **Hooks** — `PreToolUse` blocks destructive bash commands (`rm -rf`, `DROP TABLE`, `git push --force`); `PostToolUse` runs `ktlint` on `.kt` files and validates Flyway migration naming
+- **Agents** — `code-reviewer.yml` and `test-writer.yml` for independent code review and test generation passes
 
-### Hooks
-
-- **PreToolUse (Bash)**: Blocks `rm -rf`, `git push --force`, `DROP TABLE`
-- **PostToolUse (Write)**: `ktlint` on `.kt`, Flyway naming validation on `.sql`
-
-Claude Code was orchestrated with full project context, automated safety guards, and reusable skills — demonstrating systematic AI-assisted development, not prompt-and-paste.
+The model was given the right tools and context for each task rather than relying on a single large prompt.
 
 ---
 
@@ -347,23 +329,21 @@ PAYMENT_PAYOUT_WORKER_INTERVAL_MS=60000
 
 ---
 
-## Resume Talking Points
+## Key Highlights
 
-1. **Outbox Pattern** — "Eliminates the dual-write gap that causes silent payout failures. The Kafka event and order update are committed atomically; the OutboxPoller publishes synchronously and marks the event published."
+**Outbox Pattern** — The Kafka event and order are written in the same database transaction, eliminating the dual-write gap that causes silent payout failures. The `OutboxPoller` publishes synchronously every 500ms and marks events delivered; if Kafka is down, events persist and are retried automatically on recovery.
 
-2. **Saga Orchestration** — "SagaState table is the single source of truth. Order placement has four explicit steps with compensating transactions that automatically release stock on failure."
+**Saga Orchestration** — `SagaState` table tracks each step (`INVENTORY_RESERVE → ORDER_PERSIST → OUTBOX_WRITE → COMPLETED`). Compensating transactions on the `OrderTransactionService` bean (separate bean to avoid Spring AOP self-invocation) release reserved stock on any failure path.
 
-3. **Exactly-Once Payouts** — "Four idempotency layers: app-level orderId key, DB unique constraint, channel-level externalReferenceId, and status inquiry before retry. No duplicate disbursements even with network failures."
+**Exactly-Once Payouts** — Four independent idempotency layers: app-level `orderId` no-op check, `UNIQUE` DB constraint on `order_id`, bank-level `externalReferenceId` deduplication, and status inquiry before retry to handle "transfer succeeded but response was lost."
 
-4. **Auth Architecture** — "auth-service issues RS256 JWTs. Gateway validates stateless using the RSA public key — zero network calls to auth-service per request."
+**Stateless Auth** — `auth-service` issues RS256 JWTs. The gateway holds only the RSA public key and validates tokens in-process — zero network calls to `auth-service` per request. Downstream services trust `X-User-Id`/`X-User-Role` headers injected at the gateway.
 
-5. **AI-Native Development** — "Claude Code was orchestrated with skills, hooks, commands, and agents visible in `.claude/`. Systematic orchestration, not prompt-and-paste."
+**Kotlin Coroutines** — `payment-service` uses `runBlocking + supervisorScope + launch(Dispatchers.IO)` for parallel payout batches. `supervisorScope` isolates individual payout failures so one network timeout doesn't cancel the rest of the batch.
 
-6. **Kotlin Coroutines** — "payment-service uses supervisorScope for safe parallel payout batch processing. Real async design, not just Kotlin syntax."
+**Observability depth** — Distributed traces via Micrometer → OTel → Tempo, four committed Grafana dashboards (JVM, Kafka lag, payment worker, order flow), structured JSON logs with `traceId`/`orderId`/`payoutId` in MDC on every line across all 8 services.
 
-7. **Observability** — "Distributed traces via OTel + Tempo, Prometheus metrics, structured JSON logs with MDC. Four Grafana dashboards committed and auto-provisioned."
-
-8. **End-to-End** — "Order → inventory reservation → Kafka event → payout creation → PayoutWorker → bank channel → payout.completed → notification. Full flow covered by Testcontainers integration tests."
+**End-to-end verified** — Full flow (order → reservation → Kafka → payout → PayoutWorker → channel → `payout.completed` → notification) is covered by Testcontainers integration tests against real PostgreSQL, Redis, and embedded Kafka.
 
 ---
 
