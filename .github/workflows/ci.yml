@@ -29,7 +29,7 @@ jobs:
 
       - name: Unit tests — all services
         run: |
-          mvn test \
+          mvn clean test \
             -pl auth-service,api-gateway,notification-service,product-service,order-service,inventory-service,payment-service \
             --no-transfer-progress \
             -Deureka.client.enabled=false \
@@ -45,7 +45,7 @@ jobs:
 
   integration-tests:
     name: Integration Tests (Testcontainers)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: unit-tests
 
     steps:
@@ -61,9 +61,14 @@ jobs:
       - name: Build mkart-common
         run: mvn install -pl mkart-common -am --no-transfer-progress -DskipTests
 
+      - name: Verify Docker is available
+        run: docker ps
+
       - name: Run integration tests (order, inventory, payment)
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: "true"
         run: |
-          mvn verify \
+          mvn clean verify \
             -pl order-service,inventory-service,payment-service \
             -P integration-test \
             --no-transfer-progress
@@ -78,7 +83,7 @@ jobs:
 
   contract-tests:
     name: Spring Cloud Contract Verification
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: unit-tests
 
     steps:
@@ -96,7 +101,7 @@ jobs:
 
       - name: Verify contracts (inventory, order)
         run: |
-          mvn verify \
+          mvn clean verify \
             -pl inventory-service,order-service \
             -P contract-verify \
             --no-transfer-progress

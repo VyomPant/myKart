@@ -23,7 +23,7 @@ Contract.make {
             accountNumber: $(anyNonEmptyString()),
             ifscCode     : $(anyNonEmptyString()),
             beneficiaryName: $(anyNonEmptyString()),
-            items        : $(anyArray())
+            items        : $(any())
         ])
     }
 }

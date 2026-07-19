@@ -19,3 +19,7 @@ notes.md
 # Secrets
 .env
 *.env.local
+/notes/
+
+# Local run logs
+/logs/
