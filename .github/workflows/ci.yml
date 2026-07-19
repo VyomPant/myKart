@@ -29,7 +29,7 @@ jobs:
 
       - name: Unit tests — all services
         run: |
-          mvn test \
+          mvn clean test \
             -pl auth-service,api-gateway,notification-service,product-service,order-service,inventory-service,payment-service \
             --no-transfer-progress \
             -Deureka.client.enabled=false \
@@ -68,7 +68,7 @@ jobs:
         env:
           TESTCONTAINERS_RYUK_DISABLED: "true"
         run: |
-          mvn verify \
+          mvn clean verify \
             -pl order-service,inventory-service,payment-service \
             -P integration-test \
             --no-transfer-progress
@@ -101,7 +101,7 @@ jobs:
 
       - name: Verify contracts (inventory, order)
         run: |
-          mvn verify \
+          mvn clean verify \
             -pl inventory-service,order-service \
             -P contract-verify \
             --no-transfer-progress
